@@ -1,0 +1,52 @@
+<head>
+  <title>foobar</title>
+  <script src="https://cdn.jsdelivr.net/g/markdown-it@8.3.1,jquery@3.2.1"></script>
+</head>
+
+<body>
+  <div id="sarea" contenteditable="true">sarea bfegin</div>
+  <div id="tarea">rarea begin</div>
+  <div id="rarea">rarea begin</div>
+  <script>
+    function replaceAll(str, match, rep) {
+      tmparr = str.split(match);
+      result = "";
+      i = 0;
+      for (; i < tmparr.length - 1; i++) {
+        result += tmparr[i] + rep;
+      }
+      result += tmparr[i];
+      return result;
+    }
+
+    function HTML2raw(source) {
+      source = replaceAll(source, "<div></div>", "\n");
+      //source = replaceAll(source, "</", "</");
+      source = replaceAll(source, "</div>", "");
+      source = replaceAll(source, "<div>", "\n")
+      source = replaceAll(source, "<br>", "\n");
+      source = replaceAll(source, "&gt;", ">");
+      source = replaceAll(source, "&nbsp;", " ");
+      return source;
+    }
+    var md = window.markdownit();
+    //$().onchange(function(){});
+    $("#sarea").bind("DOMNodeInserted DOMNodeRemoved DOMCharacterDataModified", function() {
+      source = $(this).html();
+      source = HTML2raw(source);
+      console.log(source);
+      $("#tarea").text(md.render(source));
+      $("#rarea").html(md.render(source));
+    });
+    $(document).ready(function() {
+      document.querySelector("#sarea").addEventListener("paste", function(e) {
+        e.preventDefault();
+        var text = e.clipboardData.getData("text/plain");
+        var temp = document.createElement("div");
+        temp.innerHTML = text;
+        document.execCommand("insertHTML", false, replaceAll(temp.textContent, "\n", "<br>"));
+      });
+    });
+
+  </script>
+</body>
