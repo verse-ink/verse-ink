@@ -1,0 +1,38 @@
+<head>
+  <title>foobar</title>
+  <script src="js/markdown-it-deflist.min.js"></script>
+  <script src="js/markdown-it-footnote.min.js"></script>
+  <script src="js/markdown-it-mathjax.js"></script>
+  <script src="js/markdown-it-checkbox.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script>
+  <!--  <script src="js/TOC.js"></script>-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.6/flowchart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/g/jquery@3.2.1,markdown-it@8.3.1,highlight.js@9.10.0"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
+  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+    jax: ["input/TeX", "output/HTML-CSS"],
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+    "HTML-CSS": { availableFonts: ["TeX"] },
+    showMathMenu: false,
+    messageStyle: "none"
+});
+</script>
+</head>
+
+<body>
+  <div id="sarea" contenteditable="true">sarea bfegin</div>
+  <div id="tarea" hidden=true>rarea begin</div>
+  <div id="rarea">rarea begin</div>
+  <div id="tmp" style=" width: 100%;"></div>
+  <script src="js/index.js">
+
+
+  </script>
+</body>
