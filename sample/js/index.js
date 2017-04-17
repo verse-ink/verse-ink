@@ -16,15 +16,26 @@
    source = replaceAll(source, "<div>", "\n")
    source = replaceAll(source, "<br>", "\n");
    source = replaceAll(source, "&gt;", ">");
+   source = replaceAll(source, "&amp;", "&");
    source = replaceAll(source, "&nbsp;", " ");
    return source;
  }
 
  function drawFlowCHart(str) {
-   c = flowchart.parse(str);
-   tmp = document.querySelector("#tmp")
-   c.drawSVG(document.querySelector("#tmp"));
-   result = tmp.innerHTML;
+   var c = flowchart.parse(str);
+   var tmp = document.querySelector("#tmp");
+   c.drawSVG(tmp);
+   var result = tmp.innerHTML;
+   tmp.innerHTML = "";
+   return result;
+ }
+ function drawSequenceDiagram(str) {
+   var c = Diagram.parse(str);
+   var tmp = document.querySelector("#tmp");
+   var options = {theme: 'simple'};
+   c.drawSVG(tmp,options);
+   //c.drawSVG(document.querySelector("#tmp");
+   var result = tmp.innerHTML;
    tmp.innerHTML = "";
    return result;
  }
@@ -32,7 +43,7 @@
  //var hljs = require('highlight.js') // https://highlightjs.org/
  // to do http://liuhao.im/english/2015/11/10/the-sync-scroll-of-markdown-editor-in-javascript.html
  var defaults = {
-   html: false, // Enable HTML tags in source
+   html: true, // Enable HTML tags in source
    xhtmlOut: false, // Use '/' to close single tags (<br />)
    breaks: false, // Convert '\n' in paragraphs into <br>
    langPrefix: 'language-', // CSS language prefix for fenced blocks
@@ -53,6 +64,12 @@
          return result;
        } catch (__) {}
      }
+     else if (lang && (lang === "sequence")) {
+       try {
+         result = drawSequenceDiagram(str);
+         return result;
+       } catch (__) {}
+     }
      return ''; // use external default escaping
    }
  };
@@ -70,7 +87,7 @@
    }
    var source = $(this).html();
    source = HTML2raw(source);
-   //console.log(source);
+   console.log(source);
    $("#tarea").text(md.render(source));
    var rarea = $("#rarea");
    rarea.html(md.render(source));

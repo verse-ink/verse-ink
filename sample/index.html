@@ -7,6 +7,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js"></script>
   <!--  <script src="js/TOC.js"></script>-->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.6/flowchart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/webfont/1.6.27/webfontloader.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/snap.svg/0.5.1/snap.svg-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sequence-diagrams/1.0.6/sequence-diagram-min.js"></script>
   <script src="https://cdn.jsdelivr.net/g/jquery@3.2.1,markdown-it@8.3.1,highlight.js@9.10.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
   <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
@@ -21,7 +25,7 @@ MathJax.Hub.Config({
     },
     "HTML-CSS": { availableFonts: ["TeX"] },
     showMathMenu: false,
-    messageStyle: "none"
+    showProcessingMessages: false
 });
 </script>
 </head>
@@ -29,7 +33,7 @@ MathJax.Hub.Config({
 <body>
   <div id="sarea" contenteditable="true">sarea bfegin</div>
   <div id="tarea" hidden=true>rarea begin</div>
-  <div id="rarea">rarea begin</div>
+  <div id="rarea">$$\left\{ \begin{array}{l} {d^2x \over dt^2}      + ( {{A+B} \over r^2} + {C \over r''^2} ) x      + C ( {1 \over r'^2} - {1 \over r''^2} ) x' = 0,\\ {d^2y \over dt^2}      + ( {{A+B} \over r^2} + {C \over r''^2} ) y      + C ( {1 \over r'^2} - {1 \over r''^2} ) y' = 0,\\ {d^2z \over dt^2}      + ( {{A+B} \over r^2} + {C \over r''^2} ) z      + C ( {1 \over r'^2}  - {1 \over r''^2} ) z' = 0; \end{array} \right.$$</div>
   <div id="tmp" style=" width: 100%;"></div>
   <script src="js/index.js">
 
