@@ -15,8 +15,11 @@
    source = replaceAll(source, "</div>", "");
    source = replaceAll(source, "<div>", "\n")
    source = replaceAll(source, "<br>", "\n");
-   source = replaceAll(source, "&gt;", ">");
-   source = replaceAll(source, "&amp;", "&");
+   //var parser = new DOMParser;
+   //source=$(parser.parseFromString('<!doctype html><body>' +source,'text/html').body);
+   source=_.unescape(source);
+   //source = replaceAll(source, "&gt;", ">");
+   //source = replaceAll(source, "&amp;", "&");
    source = replaceAll(source, "&nbsp;", " ");
    return source;
  }
