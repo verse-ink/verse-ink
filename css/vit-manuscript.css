@@ -1,0 +1,13 @@
+.vit-manuscript {
+  font-family: Courier, "Source Code Pro", monospace;
+}
+
+.vit-manuscript h1,
+.vit-manuscript h2,
+.vit-manuscript h3,
+.vit-manuscript h4,
+.vit-manuscript h5,
+.vit-manuscript h6 {
+  font-weight: bolder;
+  letter-spacing: -1px;
+}
