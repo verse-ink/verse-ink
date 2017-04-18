@@ -78,9 +78,10 @@
  };
  //var deflist=require("markdown-it-deflist");
  var md = window.markdownit(defaults)
+ .use(window.markdownitMathjax)
    .use(window.markdownitFootnote)
+  .use(window.markdownitFootnote1)
    .use(window.markdownitDeflist)
-   .use(window.markdownitMathjax)
    .use(window.markdownitCheckbox);
  ///////////////////////////////////////////////
  //$().onchange(function(){});
@@ -94,6 +95,7 @@
    $("#tarea").text(md.render(source));
    var rarea = $("#rarea");
    rarea.html(md.render(source));
+   
    MathJax.Hub.Queue(["Typeset", MathJax.Hub, rarea[0]]);
  });
  $(document).ready(function () {
