@@ -78,7 +78,7 @@
  };
  //var deflist=require("markdown-it-deflist");
  var md = window.markdownit(defaults)
- .use(window.markdownitMathjax)
+ .use(window.markdownitMathblock)
    .use(window.markdownitFootnote)
   .use(window.markdownitFootnote1)
    .use(window.markdownitDeflist)
