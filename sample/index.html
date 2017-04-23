@@ -1,25 +1,27 @@
 <head>
-  <title>foobar</title>
-
+  <title>verse-ink</title>
+  <link rel="stylesheet" type="text/css" href="css/editor.css">
   <script src="js/markdown-it-deflist.min.js"></script>
   <script src="js/markdown-it-footnote.min.js"></script>
   <script src="js/markdown-it-checkbox.min.js"></script>
   <script src="js/markdown-it-mathblock.js"></script>
   <script src="js/toc.js"></script>
-  <script src="https://cdn.jsdelivr.net/g/markdown-it@8.3.1,jquery@3.2.1,raphael@2.2.7,webfontloader@1.6.27,snap.svg@0.5.1,underscorejs@1.8.3,highlight.js@9.10.0"></script>
+	<script src="js/markdown-it.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/g/jquery@3.2.1,raphael@2.2.7,webfontloader@1.6.27,snap.svg@0.5.1,underscorejs@1.8.3,highlight.js@9.10.0"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.6/flowchart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sequence-diagrams/1.0.6/sequence-diagram-min.js"></script>
   <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
   <script type="text/x-mathjax-config">
-    MathJax.Hub.Config({ extensions: ["tex2jax.js"], jax: ["input/TeX", "output/HTML-CSS"], tex2jax: { inlineMath: [ ['$','$'], ["\\(","\\)"] ], displayMath: [ ['$$','$$'], ["\\[","\\]"] ], processEscapes: true }, "HTML-CSS": { availableFonts: ["TeX"] }, showMathMenu: false, showProcessingMessages: false });
+    MathJax.Hub.Config({ extensions: ["tex2jax.js"], jax: ["input/TeX", "output/HTML-CSS"],  asciimath2jax: {
+    delimiters: [['$','$']]},tex2jax: { inlineMath: [ ['$','$'], ["\\(","\\)"] ], displayMath: [ ['$$','$$'], ["\\[","\\]"] ], processEscapes: true }, "HTML-CSS": { availableFonts: ["TeX"] }, showMathMenu: false, showProcessingMessages: false });
   </script>
 </head>
 
 <body>
-  <div id="sarea" contenteditable="true">sarea bfegin</div>
-  <div id="tarea" hidden=true>rarea begin</div>
-  <div id="rarea">
-    <p>$$\left\{ \begin{array}{l} {d^2x \over dt^2} + ( {{A+B} \over r^2} + {C \over r''^2} ) x + C ( {1 \over r'^2} - {1 \over r''^2} ) x' = 0,\\ {d^2y \over dt^2} + ( {{A+B} \over r^2} + {C \over r''^2} ) y + C ( {1 \over r'^2} - {1 \over r''^2} ) y' = 0,\\ {d^2z \over dt^2} + ( {{A+B} \over r^2} + {C \over r''^2} ) z + C ( {1 \over r'^2} - {1 \over r''^2} ) z' = 0; \end{array} \right.$$</p>
+  <div id="sarea" contenteditable="true">sarea begin</div>
+  <div id="tarea">tarea begin</div>
+  <div id="rarea" contenteditable="true">
+    <p>rarea begin</p>
   </div>
   <div id="tmp" style=" width: 100%;"></div>
   <script src="js/index.js">
