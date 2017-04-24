@@ -1,7 +1,7 @@
 .markdown-markup {
-    display:none;
+    font-size:0;
 }
 
 .markdown-markup-show{
-    display:inline;
+    font-size: inherit;
 }
