@@ -92,11 +92,15 @@ function bindCusorListener() {
 
     }
     function updateArea(r){
-        var rhtml = r.html();
-        var rtext = rhtml.replace(/<[^<>]+>/g, '');
+        var rhtml = r.html()
+            .replace(/<br>(?=<\/span>)/g,"");
+        var rtext = rhtml.replace(/<[^<>]+>/g, '')//dropping all the tags
+            .replace(/ /g,"&nbsp;");// replacing common spaces
         var rendered = md.render(rtext);
-        var renderedWithoutClass = rendered.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '');
-        var rhtmlWithoutNbspAndClass = rhtml.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '').replace(/&nbsp;/g, '\xa0');
+        var renderedWithoutClass = rendered.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
+            .replace(/(&nbsp;|[ ])/g, '\xa0');
+        var rhtmlWithoutNbspAndClass = rhtml.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
+            .replace(/(&nbsp;|[ ])/g, '\xa0');
         if (renderedWithoutClass=== rhtmlWithoutNbspAndClass) {
             console.log("don't need be rebuilt");
         } else {
@@ -152,7 +156,7 @@ function autoToggleMarkups() {
             }
         }
     }
-    
+
     //previous
     if (selection.anchorOffset === 0) {
         if ($(aNode.parentNode).prev().hasClass("markdown-markup")) {
