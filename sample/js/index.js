@@ -80,43 +80,6 @@ function mdinit() {
     return md;
 }
 
-function bindCusorListener() {
-    function setChangeListener(div, listener) {
-        div.addEventListener("blur", listener);
-        div.addEventListener("keyup", listener);
-        div.addEventListener("paste", listener);
-        div.addEventListener("copy", listener);
-        div.addEventListener("cut", listener);
-        div.addEventListener("delete", listener);
-        div.addEventListener("mouseup", listener);
-
-    }
-    function updateArea(r){
-        var rhtml = r.html()
-            .replace(/<br>(?=<\/span>)/g,"");
-        var rtext = rhtml.replace(/<[^<>]+>/g, '')//dropping all the tags
-            .replace(/ /g,"&nbsp;");// replacing common spaces
-        var rendered = md.render(rtext);
-        var renderedWithoutClass = rendered.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
-            .replace(/(&nbsp;|[ ])/g, '\xa0');
-        var rhtmlWithoutNbspAndClass = rhtml.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
-            .replace(/(&nbsp;|[ ])/g, '\xa0');
-        if (renderedWithoutClass=== rhtmlWithoutNbspAndClass) {
-            console.log("don't need be rebuilt");
-        } else {
-            console.log("need to be rebuilt");
-            var caretIndex = getCaretCharacterOffsetWithin(r[0]);
-            r.html(rendered);
-            setCaretOffset(r, 0, caretIndex);
-        }
-    }
-    setChangeListener(document.querySelector("#rarea"), function () {
-        var r = $('#rarea');
-        updateArea(r);
-        autoToggleMarkups();
-    });
-}
-
 
 function autoToggleMarkups() {
     var selection;
@@ -136,7 +99,7 @@ function autoToggleMarkups() {
     $(aNode.parentNode).addClass("verse-ink-selected");
     $(".markdown-markup-show").not(".verse-ink-selected").removeClass("markdown-markup-show");
     if ($(".verse-ink-selected").hasClass("markdown-markup")) {
-        var selected= $(".verse-ink-selected");
+        var selected = $(".verse-ink-selected");
         selected.addClass("markdown-markup-show");
         var classes = selected[0].classList;
         for (i = 0; i < classes.length; i++) {
@@ -208,7 +171,7 @@ function getCaretCharacterOffsetWithin(element) {
             preCaretRange.selectNodeContents(element);
             preCaretRange.setEnd(range.endContainer, range.endOffset);
             caretOffset = preCaretRange.toString().length;
-            console.log(':' + caretOffset);
+            //console.log(':' + caretOffset);
         }
     } else if ((sel = doc.selection) && sel.type != "Control") {
         var textRange = sel.createRange();
@@ -232,7 +195,7 @@ function setCaretOffset(currentObj, currentOffset, targetOffset) {
             range.collapse(true);
             sel.removeAllRanges();
             sel.addRange(range);
-            console.log(targetOffset - currentOffset);
+            //console.log(targetOffset - currentOffset);
             return -1;
         }
         else {//this contains childs
@@ -255,7 +218,74 @@ function setCaretOffset(currentObj, currentOffset, targetOffset) {
         return currentObj.text().length;
     }
 }
+//todo
+//should be run after rendering
+function buildBlockSerials(objBlocks) {
+    if (!objBlocks){return;}
+    for (i = 0; i < objBlocks.length; i++) {
+        $(objBlocks[i]).attr('verse_ink_blockid',i);
+    }
+}
+//todo
+//should be run after change
+function dirtyCheck(objBlocks) {
+    if (!objBlocks){return;}
+    objBlocks.removeClass("verse-ink-dirty");
+    for (i = 1; i < objBlocks.length; i++) {
+        if($(objBlocks[i]).attr('verse_ink_blockid') == $(objBlocks[i-1]).attr('verse_ink_blockid')){
+            $(objBlocks[i]).addClass("verse-ink-dirty");
+            console.log($(objBlocks[i]).text());
+        }
+    }
+}
 
+function bindCusorListener() {
+    function setChangeListener(div, listener) {
+        div.addEventListener("blur", listener);
+        div.addEventListener("keyup", listener);
+        div.addEventListener("paste", listener);
+        div.addEventListener("copy", listener);
+        div.addEventListener("cut", listener);
+        div.addEventListener("delete", listener);
+        div.addEventListener("mouseup", listener);
+
+    }
+
+    function updateArea(r) {
+        var blocks=r.children();
+        dirtyCheck(blocks);
+        var rhtml = r.html()
+            .replace(/<br>(?=<\/span>)/g, "");
+        var rtext = rhtml.replace(/<[^<>]+>/g, '')//dropping all the tags
+            .replace(/ /g, "&nbsp;");// replacing common spaces
+        var rendered = md.render(rtext);
+        var renderedWithoutClass = rendered.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
+            .replace(/(&nbsp;|[ ])/g, '\xa0');
+        var rhtmlWithoutNbspAndClass = rhtml.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
+            .replace(/(&nbsp;|[ ])/g, '\xa0');
+
+        //rendering
+        if (renderedWithoutClass === rhtmlWithoutNbspAndClass) {
+            console.log("don't need be rebuilt");
+        } else {
+            console.log("need to be rebuilt");
+            var caretIndex = getCaretCharacterOffsetWithin(r[0]);
+            r.html(rendered);
+            setCaretOffset(r, 0, caretIndex);
+        }
+
+        buildBlockSerials(blocks);
+    }
+
+    setChangeListener(document.querySelector("#rarea"), function () {
+        var r = $("#rarea");
+        updateArea(r);
+        autoToggleMarkups();
+    });
+}
+
+
+//the event listener for the source area
 $("#sarea").bind("DOMNodeInserted DOMNodeRemoved DOMCharacterDataModified", function () {
     if (this.locked === 1) {
         return;
@@ -268,7 +298,7 @@ $("#sarea").bind("DOMNodeInserted DOMNodeRemoved DOMCharacterDataModified", func
     rarea.html(md.render(source));
     //MathJax.Hub.Queue(["Typeset", MathJax.Hub, rarea[0]]);
 });
-
+// past event listener
 $(document).ready(function () {
     window.md = mdinit();
     bindCusorListener();
