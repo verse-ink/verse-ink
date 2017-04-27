@@ -3,6 +3,23 @@ function replaceAll(str, match, rep) {
     return target.replace(new RegExp(match, 'g'), rep);
 }
 
+function html2text(html){
+    var rtext = html.replace(/<span class="verse-ink-newline-holder"><\/span>/g, "awstreytcvghbjk6d5rytfyuvgb")
+        .replace(/<\/\w><(p|div|pre)[^>]+>/g, "\n")
+        .replace(/<[^<>]+>/g, '')//dropping all the tags
+        .replace(/ /g, "&nbsp;")// replacing common spaces
+        .replace(/awstreytcvghbjk6d5rytfyuvgb/g, '<span class="verse-ink-newline-holder"><\/span>');
+    return rtext;
+}
+function blocks2source(blocks){
+    var result="";
+    for (i=0;i<blocks.length;i++){
+        var html=$(blocks[i]).html();
+        var text=html2text(html);
+        result+=(text+"\n\n");
+    }
+    return result;
+}
 function HTML2raw(source) {
     source = replaceAll(source, "<div></div>", "\n");
     //source = replaceAll(source, "</", "</");
@@ -158,6 +175,12 @@ function autoToggleMarkups() {
     return true;
 }
 
+function mark_CaretBlock(){
+    $('.verse-ink-selected-block').removeClass('verse-ink-selected-block');
+    var sel = window.getSelection();
+    $(sel.anchorNode).parents('.markdown-block').addClass('verse-ink-selected-block');
+}
+
 function getCaretCharacterOffsetWithin(element) {
     var caretOffset = 0;
     var doc = element.ownerDocument || element.document;
@@ -211,32 +234,66 @@ function setCaretOffset(currentObj, currentOffset, targetOffset) {
                 }
 
             }
-            console.log("you are in the Neverland");//show never be executed
+            console.log("you are in the Neverland");//should never be executed
         }
     }
     else {//the caret should be in some element after this one
         return currentObj.text().length;
     }
 }
-//todo
 //should be run after rendering
 function buildBlockSerials(objBlocks) {
-    if (!objBlocks){return;}
+    if (!objBlocks) {
+        return;
+    }
     for (i = 0; i < objBlocks.length; i++) {
-        $(objBlocks[i]).attr('verse_ink_blockid',i);
+        $(objBlocks[i]).attr('verse_ink_blockid', i);
     }
 }
-//todo
 //should be run after change
 function dirtyCheck(objBlocks) {
-    if (!objBlocks){return;}
-    objBlocks.removeClass("verse-ink-dirty");
+    if (!objBlocks) {
+        return;
+    }
+
+    $('.verse-ink-dirty').removeClass("verse-ink-dirty");
     for (i = 1; i < objBlocks.length; i++) {
-        if($(objBlocks[i]).attr('verse_ink_blockid') == $(objBlocks[i-1]).attr('verse_ink_blockid')){
+        if ($(objBlocks[i]).attr('verse_ink_blockid') == $(objBlocks[i - 1]).attr('verse_ink_blockid')) {
             $(objBlocks[i]).addClass("verse-ink-dirty");
             console.log($(objBlocks[i]).text());
         }
     }
+}
+
+function addingNewLineHolders(dirtys) {
+    mark_CaretBlock();
+    dirtys.each(function () {
+        if ($(this).text().length === 0) {
+            //var offset=getCaretCharacterOffsetWithin($("#rarea")[0]);
+
+            $(this).append('<span class="verse-ink-newline-holder"><\/span>');
+
+            if($(this).hasClass('verse-ink-selected-block')) {
+                var el = this;
+                var range = document.createRange();
+                var sel = window.getSelection();
+                range.setStart(el, 0);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                el.focus();
+            }
+
+        }
+    });
+}
+
+function removingNewLineHolders(){
+    holders=$('.verse-ink-newline-holder').each(function(){
+        if ($(this).parent().text().length!=0){
+            $(this).remove();
+        }
+    });
 }
 
 function bindCusorListener() {
@@ -248,30 +305,34 @@ function bindCusorListener() {
         div.addEventListener("cut", listener);
         div.addEventListener("delete", listener);
         div.addEventListener("mouseup", listener);
-
     }
 
     function updateArea(r) {
-        var blocks=r.children();
-        dirtyCheck(blocks);
-        var rhtml = r.html()
-            .replace(/<br>(?=<\/span>)/g, "");
-        var rtext = rhtml.replace(/<[^<>]+>/g, '')//dropping all the tags
-            .replace(/ /g, "&nbsp;");// replacing common spaces
-        var rendered = md.render(rtext);
-        var renderedWithoutClass = rendered.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
-            .replace(/(&nbsp;|[ ])/g, '\xa0');
-        var rhtmlWithoutNbspAndClass = rhtml.replace(/[ ]*class=\"[^\"]*\"[ ]*/g, '')
-            .replace(/(&nbsp;|[ ])/g, '\xa0');
 
+        var blocks = r.children();
+        dirtyCheck(blocks);
+        var dirtys = $('.verse-ink-dirty');
+        removingNewLineHolders();
+        addingNewLineHolders(dirtys);
+        source=blocks2source(blocks);
+        //comparing the rresult to determine if need to render
+        var rhtml = r.html();
+            //.replace(/<br>(?=<\/span>)/g, "");
+        var rtext=source;
+        var rendered = md.render(rtext);
+        var renderedWithoutClass = rendered.replace(/[ ]*(class|verse_ink_blockid)=\"[^\"]*\"[ ]*/g, '')
+            .replace(/(&nbsp;|[ ])/g, '\xa0');
+        var rhtmlWithoutNbspAndClass = rhtml.replace(/[ ]*(class|verse_ink_blockid)=\"[^\"]*\"[ ]*/g, '')
+            .replace(/(&nbsp;|[ ])/g, '\xa0');
+        console.log(getCaretCharacterOffsetWithin(r[0]));
         //rendering
         if (renderedWithoutClass === rhtmlWithoutNbspAndClass) {
             console.log("don't need be rebuilt");
         } else {
             console.log("need to be rebuilt");
-            var caretIndex = getCaretCharacterOffsetWithin(r[0]);
-            r.html(rendered);
-            setCaretOffset(r, 0, caretIndex);
+            // var caretIndex = getCaretCharacterOffsetWithin(r[0]);
+            // r.html(rendered);
+            // setCaretOffset(r, 0, caretIndex);
         }
 
         buildBlockSerials(blocks);

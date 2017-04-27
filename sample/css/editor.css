@@ -5,3 +5,6 @@
 .markdown-markup-show{
     font-size: inherit;
 }
+.verse-ink-newline-place-holder{
+    display:none;
+}
