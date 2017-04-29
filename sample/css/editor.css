@@ -6,5 +6,12 @@
     font-size: inherit;
 }
 .verse-ink-newline-place-holder{
+    font-size: inherit;
+}
+.verse-ink-caret{
     display:none;
+}
+:empty {
+    display: block;
+    height: 1em;
 }
