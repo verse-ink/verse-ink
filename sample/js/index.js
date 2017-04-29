@@ -330,9 +330,9 @@ function bindCusorListener() {
             console.log("don't need be rebuilt");
         } else {
             console.log("need to be rebuilt");
-            // var caretIndex = getCaretCharacterOffsetWithin(r[0]);
-            // r.html(rendered);
-            // setCaretOffset(r, 0, caretIndex);
+             var caretIndex = getCaretCharacterOffsetWithin(r[0]);
+             r.html(rendered);
+             setCaretOffset(r, 0, caretIndex);
         }
 
         buildBlockSerials(blocks);
