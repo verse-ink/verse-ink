@@ -23,7 +23,6 @@ Selection.prototype = {
         }
     },
     saveCusor: function () {
-        this.markSelected();
         var selectedBlock = $('.verse-ink-selected').parents(".markdown-block");
         if (selectedBlock.length === 0) {
             selectedBlock = $('.verse-ink-selected.markdown-block');
@@ -92,7 +91,9 @@ Selection.prototype = {
         buildBlockSerials(childs);
         for (i = 0; i < childs.length; i++) {
             if ($(childs[i]).attr("verse_ink_blockid") === this.cblockid) {
-                this.setCaretOffsetWithin($(childs[i]), 0, this.coffset);
+
+                    this.setCaretOffsetWithin($(childs[i]), 0, this.coffset);
+
                 break;
             }
         }
@@ -111,7 +112,7 @@ function replaceAll(str, match, rep) {
 }
 
 function html2text(html) {
-    var rtext = html.replace(/<span class="verse-ink-newline-holder[^"]*"><\/span>/g, "awstreytcvghbjk6d5rytfyuvgb")
+    var rtext = html.replace(/<span class="verse-ink-newline-holder[^"]*">(<br>)*<\/span>/g, "awstreytcvghbjk6d5rytfyuvgb")
         .replace(/<span class="verse-ink-caret"><\/span>/g, "esxfcgsercvghbgybujnkijm")
         .replace(/<\/\w><(p|div|pre)[^>]+>/g, "\n")
         .replace(/<[^<>]+>/g, '')//dropping all the tags
@@ -195,7 +196,7 @@ function addingNewLineHolders(dirtys) {
 
 function removingNewLineHolders() {
     holders = $('.verse-ink-newline-holder').each(function () {
-        if ($(this).parent().text().length !== 0 ) {//if there's no need to hold the line
+        if ($(this).parent().text().length !== 0 && !($(this).hasClass('verse-ink-selected'))) {//if there's no need to hold the line
             text = $(this).parent().text();
             $(this).parent().text(text);
             $(this).remove();
@@ -310,7 +311,7 @@ function autoToggleMarkups(s) {
     }
 
     //child
-    $(aNode.parentElement).parents("strong , code , em, u").each(function () {
+    $(aNode.parentElement).parents("strong , code , em, u , s").each(function () {
         $(this).next().addClass("markdown-markup-show");
         $(this).prev().addClass("markdown-markup-show");
     });
@@ -323,10 +324,11 @@ function optimizedRender(r, s) {
     var source, rhtml, rtext, rendered, renderedWithoutClass, rhtmlWithoutNbspAndClass;
     var blocks = r.children();
     buildBlockSerials(blocks);
+    s.markSelected();
     s.saveCusor();
     addingNewLineHolders(blocks);
     removingNewLineHolders();
-    source = blocks2source(blocks);
+    source = blocks2source(blocks);console.log(source);
     rhtml = r.html();
     rtext = source;
     rendered = md.render(rtext);
