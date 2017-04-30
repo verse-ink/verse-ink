@@ -15,3 +15,6 @@
     display: block;
     height: 1em;
 }
+.markdown-text {
+    display:inline;
+}

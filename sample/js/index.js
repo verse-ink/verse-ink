@@ -195,11 +195,13 @@ function addingNewLineHolders(dirtys) {
 
 function removingNewLineHolders() {
     holders = $('.verse-ink-newline-holder').each(function () {
-        if ($(this).parent().text().length !== 0) {
+        if ($(this).parent().text().length !== 0 ) {//if there's no need to hold the line
             text = $(this).parent().text();
             $(this).parent().text(text);
             $(this).remove();
-
+        }
+        if ($(this).parent().children(".verse-ink-newline-holder").length>1){//preventing more than one holders
+            $(this).remove();
         }
     });
 }
@@ -316,6 +318,8 @@ function autoToggleMarkups(s) {
 }
 
 function optimizedRender(r, s) {
+    //console.log(r.html());
+    //$("br").parents(".markdown-block").after('<p class="markdown-block">1<span class="verse-ink-newline-holder"></span></p>');
     var source, rhtml, rtext, rendered, renderedWithoutClass, rhtmlWithoutNbspAndClass;
     var blocks = r.children();
     buildBlockSerials(blocks);
@@ -336,6 +340,7 @@ function optimizedRender(r, s) {
         s.restoreCusor(r);
     }
     buildBlockSerials(blocks);
+
 }
 function pasteHtmlAtCaret(html) {
     var sel, range;
