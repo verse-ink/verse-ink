@@ -18,3 +18,8 @@
 .markdown-text {
     display:inline;
 }
+
+.markdown-block{
+    display:block;
+    height:1em;
+}

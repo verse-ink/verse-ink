@@ -114,6 +114,7 @@ function replaceAll(str, match, rep) {
 function html2text(html) {
     var rtext = html.replace(/<span class="verse-ink-newline-holder[^"]*">(<br>)*<\/span>/g, "awstreytcvghbjk6d5rytfyuvgb")
         .replace(/<span class="verse-ink-caret"><\/span>/g, "esxfcgsercvghbgybujnkijm")
+        .replace(/<br(\/)?>/g, "\n\n")
         .replace(/<\/\w><(p|div|pre)[^>]+>/g, "\n")
         .replace(/<[^<>]+>/g, '')//dropping all the tags
         .replace(/ /g, "&nbsp;")// replacing common spaces
@@ -321,6 +322,9 @@ function autoToggleMarkups(s) {
 function optimizedRender(r, s) {
     //console.log(r.html());
     //$("br").parents(".markdown-block").after('<p class="markdown-block">1<span class="verse-ink-newline-holder"></span></p>');
+    if ($(s.sel.anchorNode).html()&& $(s.sel.anchorNode).html().search("<br>")!==-1 )
+        return;
+
     var source, rhtml, rtext, rendered, renderedWithoutClass, rhtmlWithoutNbspAndClass;
     var blocks = r.children();
     buildBlockSerials(blocks);
@@ -386,7 +390,7 @@ function bindCusorListener() {
     function setChangeListener(div, listener) {
         div.addEventListener("blur", listener);
         div.addEventListener("keyup", listener);
-        div.addEventListener("paste", listener);
+        //div.addEventListener("paste", listener);
         div.addEventListener("copy", listener);
         div.addEventListener("cut", listener);
         div.addEventListener("delete", listener);
@@ -396,6 +400,7 @@ function bindCusorListener() {
     setChangeListener(document.querySelector("#rarea"), function () {
         var r = $("#rarea");
         s = new Selection();
+        if (r[0].locked===1){console.log("locked");return;}
         optimizedRender(r, s);
         autoToggleMarkups(s);
     });
@@ -419,7 +424,7 @@ $("#sarea").bind("DOMNodeInserted DOMNodeRemoved DOMCharacterDataModified", func
 $(document).ready(function () {
     window.md = mdinit();
     bindCusorListener();
-    var sourceArea = document.querySelector("#sarea");
+    var sourceArea = document.querySelector("#rarea");
     sourceArea.addEventListener("paste", function (e) {
         e.preventDefault();
         var text = e.clipboardData.getData("text/plain");
