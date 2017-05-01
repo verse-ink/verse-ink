@@ -11,7 +11,7 @@
 .verse-ink-caret{
     display:none;
 }
-:empty {
+.verse-ink-newline-holder:empty {
     display: block;
     height: 1em;
 }

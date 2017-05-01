@@ -105,7 +105,7 @@ Selection.prototype = {
 function purifyHTML(html) {
     return html.replace(/<span class="verse-ink-newline-holder"><\/span>/g, "")
         .replace(/[ ]*(class|verse_ink_blockid)=\"[^\"]*\"[ ]*/g, '')
-        .replace(/(&nbsp;|[ ])/g, '\xa0');
+        .replace(/(&nbsp;| |\xa0)/g, '$nbsp;');
 }
 function replaceAll(str, match, rep) {
     return str.replace(new RegExp(match, 'g'), rep);
@@ -117,7 +117,7 @@ function html2text(html) {
         .replace(/<br(\/)?>/g, "\n\n")
         .replace(/<\/\w><(p|div|pre)[^>]+>/g, "\n")
         .replace(/<[^<>]+>/g, '')//dropping all the tags
-        .replace(/ /g, "&nbsp;")// replacing common spaces
+        .replace(/( |&nbsp;|\xa0)/g, "&nbsp;")// replacing common spaces
         .replace(/awstreytcvghbjk6d5rytfyuvgb/g, '<span class="verse-ink-newline-holder"><\/span>')
         .replace(/esxfcgsercvghbgybujnkijm/g, '<span class="verse-ink-caret"><\/span>');
     rtext = _.unescape(rtext);
@@ -163,6 +163,7 @@ function drawSequenceDiagram(str) {
 }
 
 function buildBlockSerials(objBlocks) {
+    objBlocks.addClass("markdown-block");
     if (!objBlocks) {
         return;
     }
@@ -214,7 +215,7 @@ function mdinit() {
         xhtmlOut: false, // Use '/' to close single tags (<br />)
         breaks: false, // Convert '\n' in paragraphs into <br>
         langPrefix: 'language-', // CSS language prefix for fenced blocks
-        linkify: true, // autoconvert URL-like texts to links
+        linkify: false, // autoconvert URL-like texts to links
         typographer: true, // Enable smartypants and other sweet transforms
         breaks: true, // options below are for demo only
         _highlight: true,
@@ -243,7 +244,8 @@ function mdinit() {
         }
     };
     //var deflist=require("markdown-it-deflist");
-    return window.markdownit(defaults).use(window.markdownitMathblock).use(window.markdownitFootnote).use(window.markdownitFootnote1).use(window.markdownitDeflist).use(window.markdownitCheckbox);
+    return window.markdownit(defaults);
+    //.use(window.markdownitMathblock).use(window.markdownitFootnote).use(window.markdownitFootnote).use(window.markdownitDeflist).use(window.markdownitCheckbox);
 }
 
 function autoToggleMarkups(s) {
@@ -312,7 +314,7 @@ function autoToggleMarkups(s) {
     }
 
     //child
-    $(aNode.parentElement).parents("strong , code , em, u , s").each(function () {
+    $(aNode.parentElement).parents("strong,code,em,u,s,a").each(function () {
         $(this).next().addClass("markdown-markup-show");
         $(this).prev().addClass("markdown-markup-show");
     });
@@ -322,6 +324,7 @@ function autoToggleMarkups(s) {
 function optimizedRender(r, s) {
     //console.log(r.html());
     //$("br").parents(".markdown-block").after('<p class="markdown-block">1<span class="verse-ink-newline-holder"></span></p>');
+
     if ($(s.sel.anchorNode).html()&& $(s.sel.anchorNode).html().search("<br>")!==-1 )
         return;
 
@@ -332,12 +335,13 @@ function optimizedRender(r, s) {
     s.saveCusor();
     addingNewLineHolders(blocks);
     removingNewLineHolders();
-    source = blocks2source(blocks);console.log(source);
-    rhtml = r.html();
+    source = blocks2source(blocks);
+    rhtml = replaceAll(r.html(),"<br>","");
     rtext = source;
     rendered = md.render(rtext);
     renderedWithoutClass = purifyHTML(rendered);
     rhtmlWithoutNbspAndClass = purifyHTML(rhtml);
+    //console.log("source: "+source);
     if (renderedWithoutClass === rhtmlWithoutNbspAndClass) {
         console.log("don't need be rebuilt");
     } else {
