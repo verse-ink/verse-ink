@@ -342,16 +342,16 @@ function optimizedRender(r, s) {
       //   $("br").each(function(){
       //
       //   });
-      $(".verse-ink-newline-holder").each(function () {
-            if ($(this).next(".verse-ink-newline-holder").contents("br").length > 0) {
-                  $(this).remove();
-            }
-      });
-      if ($("br").parent().is("span") && $("br").parent("span").parent().contents().length != $("br").parent("span").parent().length) {
-            // console.log("#rarea").html();
-            return;
-      }
-
+      // $(".verse-ink-newline-holder").each(function () {
+      //       if ($(this).next(".verse-ink-newline-holder").contents("br").length > 0) {
+      //             $(this).remove();
+      //       }
+      // });
+      // if ($("br").parent().is("span") && $("br").parent("span").parent().contents().length != $("br").parent("span").parent().length) {
+      //       // console.log("#rarea").html();
+      //       return;
+      // }
+      //
 
       $("br").remove();
       var source, rhtml, rtext, rendered, renderedWithoutClass, rhtmlWithoutNbspAndClass;
@@ -376,6 +376,7 @@ function optimizedRender(r, s) {
 
 
       source = blocks2source(blocks);
+      console.log(source);
       rhtml = replaceAll(r.html(), "<br>", "");
       rtext = source;
       rendered = md.render(rtext);
@@ -455,18 +456,23 @@ function bindCusorListener() {
             r[0].locked = 0;
       });
 }
+// the return key handler
+function addingNewlineHandler() {
+      $('#rarea').keydown(function (e) {
+            s = new Selection();
+            // trap the return key being pressed
+            if (e.keyCode === 13) {
+                  if ($(s.sel.anchorNode).parents(".markdown-block").text().length === 0) {
+                        insertNewline(s);
+                        return false;
+                  }
+                  return true;
+            }
+      });
+}
 
-$('#rarea').keydown(function(e) {s=new Selection();
-      // trap the return key being pressed
-      if (e.keyCode === 13) {
-            // insert 2 br tags (if only one br tag is inserted the cursor won't go to the next line)
-            if ($(s.sel.anchorNode).parents(".markdown-block").text().length===0)
-            {insertNewline(s);return false}
-            // prevent the default behaviour of return key pressed
-            return 1;
-      }
-});
 
+addingNewlineHandler();
 //the event listener for the source area
 $("#sarea").bind("DOMNodeInserted DOMNodeRemoved DOMCharacterDataModified", function () {
       if (this.locked === 1) {
