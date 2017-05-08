@@ -57,12 +57,7 @@ Selection.prototype = {
 
                   if (currentObj.contents().length === 0) {//this is a text node
                         //setCaretPosition(currentObj[0],targetOffset-currentOffset);
-                        var range = document.createRange();
-                        var sel = this.sel;
-                        range.setStart(currentObj[0], targetOffset - currentOffset);
-                        range.collapse(true);
-                        sel.removeAllRanges();
-                        sel.addRange(range);
+                        this.setCusorPosInEl(currentObj[0], targetOffset - currentOffset);
                         //console.log(targetOffset - currentOffset);
                         return -1;
                   }
@@ -91,12 +86,18 @@ Selection.prototype = {
             buildBlockSerials(childs);
             for (i = 0; i < childs.length; i++) {
                   if ($(childs[i]).attr("verse_ink_blockid") === this.cblockid) {
-
                         this.setCaretOffsetWithin($(childs[i]), 0, this.coffset);
-
                         break;
                   }
             }
+      },
+      setCusorPosInEl: function (el, offset) {
+            var range = document.createRange();
+            var sel = this.sel;
+            range.setStart(el, offset);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
       }
 
 };
@@ -208,6 +209,14 @@ function removingNewLineHolders() {
             }
       });
 }
+
+function movingCusorIntoholders(s){
+      //move the cusor into a span tag in new-line
+      var contentEls=$(s.sel.anchorNode).contents(".verse-ink-newline-holder");
+      if (contentEls.length > 0) {
+            s.setCusorPosInEl(contentEls[0],0);
+      }
+}
 ///////////////////////////////////////////////
 function mdinit() {
       var defaults = {
@@ -252,13 +261,7 @@ function insertNewline(s) {
       var selectedBlock = $(s.sel.anchorNode).parents('.markdown-block');
       var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="3"><span class="verse-ink-newline-holder"></span></p>')
             .insertAfter(selectedBlock);
-      var range = document.createRange();
-      var sel = s.sel;
-      range.setStart(el.children()[0], 0);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-
+      s.setCusorPosInEl(el.children()[0], 0);
 }
 
 function autoToggleMarkups(s) {
@@ -335,24 +338,6 @@ function autoToggleMarkups(s) {
 }
 
 function optimizedRender(r, s) {
-      //console.log(r.html());
-      //$("br").parents(".markdown-block").after('<p class="markdown-block">1<span class="verse-ink-newline-holder"></span></p>');
-      //if ($(s.sel.anchorNode).html()&& $(s.sel.anchorNode).html().search("<br>")!==-1 )
-      //    return;
-      //   $("br").each(function(){
-      //
-      //   });
-      // $(".verse-ink-newline-holder").each(function () {
-      //       if ($(this).next(".verse-ink-newline-holder").contents("br").length > 0) {
-      //             $(this).remove();
-      //       }
-      // });
-      // if ($("br").parent().is("span") && $("br").parent("span").parent().contents().length != $("br").parent("span").parent().length) {
-      //       // console.log("#rarea").html();
-      //       return;
-      // }
-      //
-
       $("br").remove();
       var source, rhtml, rtext, rendered, renderedWithoutClass, rhtmlWithoutNbspAndClass;
       var blocks = r.children();
@@ -361,20 +346,7 @@ function optimizedRender(r, s) {
       s.saveCusor();
       addingNewLineHolders(blocks);
       removingNewLineHolders();
-
-
-      //move the cusor into a span tag in new-line
-      if ($(s.sel.anchorNode).contents(".verse-ink-newline-holder").length > 0) {
-            var range = document.createRange();
-            var sel = s.sel;
-            range.setStart($(s.sel.anchorNode).contents(".verse-ink-newline-holder")[0], 0);
-            range.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(range);
-            //console.log(targetOffset - currentOffset);
-      }
-
-
+      movingCusorIntoholders(s);
       source = blocks2source(blocks);
       console.log(source);
       rhtml = replaceAll(r.html(), "<br>", "");
@@ -456,6 +428,7 @@ function bindCusorListener() {
             r[0].locked = 0;
       });
 }
+
 // the return key handler
 function addingNewlineHandler() {
       $('#rarea').keydown(function (e) {
