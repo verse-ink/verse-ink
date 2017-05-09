@@ -90,7 +90,8 @@ Selection.prototype = {
                         break;
                   }
             }
-      },
+      },      //inside a markup span
+
       setCusorPosInEl: function (el, offset) {
             var range = document.createRange();
             var sel = this.sel;
@@ -104,7 +105,7 @@ Selection.prototype = {
 
 ///////////////////
 function purifyHTML(html) {
-      return html.replace(/<span class="verse-ink-newline-holder"><\/span>/g, "")
+      return html.replace(/<span class="verse-ink-newline-holder[^"]*"><\/span>/g, "")
             .replace(/[ ]*(class|verse_ink_blockid)=\"[^\"]*\"[ ]*/g, '')
             .replace(/(&nbsp;| |\xa0)/g, '$nbsp;');
 }
@@ -210,11 +211,11 @@ function removingNewLineHolders() {
       });
 }
 
-function movingCusorIntoholders(s){
+function movingCusorIntoholders(s) {
       //move the cusor into a span tag in new-line
-      var contentEls=$(s.sel.anchorNode).contents(".verse-ink-newline-holder");
+      var contentEls = $(s.sel.anchorNode).contents(".verse-ink-newline-holder");
       if (contentEls.length > 0) {
-            s.setCusorPosInEl(contentEls[0],0);
+            s.setCusorPosInEl(contentEls[0], 0);
       }
 }
 ///////////////////////////////////////////////
@@ -259,9 +260,20 @@ function mdinit() {
 
 function insertNewline(s) {
       var selectedBlock = $(s.sel.anchorNode).parents('.markdown-block');
+      if (selectedBlock.length === 0) {
+            selectedBlock = $(s.sel.anchorNode);
+      }
       var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="3"><span class="verse-ink-newline-holder"></span></p>')
             .insertAfter(selectedBlock);
       s.setCusorPosInEl(el.children()[0], 0);
+}
+
+function addMarkdownElListeners(s) {
+      $('#rarea  img').click(function () {
+            console.log('!!!');
+            s.setCusorPosInEl($(this).prev()[0], $(this).prev().text.length);
+            autoToggleMarkups(s);
+      });
 }
 
 function autoToggleMarkups(s) {
@@ -270,29 +282,33 @@ function autoToggleMarkups(s) {
       if (!selection.isCollapsed || selection.rangeCount !== 1) return undefined;
       var aNode = selection.anchorNode;
       //parents detection
+
+      // todo 封装进对象
       if ($(aNode.parentNode).is("#sarea") || $(aNode.parentNode).parents("#sarea").length > 0) {
             return 0;
       }
-      //inside
 
-      $(".markdown-markup-show").not(".verse-ink-selected").removeClass("markdown-markup-show");
-      if ($(".verse-ink-selected").hasClass("markdown-markup")) {
+      //cleaning up (shoud be done here)
+      $('.markdown-markup-show').not('.verse-ink-selected').removeClass('markdown-markup-show');
+
+      //inside a markup span
+      if ($('.verse-ink-selected').hasClass('markdown-markup')) {
             var classes, tmpclass, tmpnode;
-            var selected = $(".verse-ink-selected");
-            selected.addClass("markdown-markup-show");
+            var selected = $('.verse-ink-selected');
+            selected.addClass('markdown-markup-show');
             classes = selected[0].classList;
             for (i = 0; i < classes.length; i++) {
                   if (classes[i].search('_open') !== -1) {
                         tmpclass = classes[i];
                         tmpclass = '.' + tmpclass.replace('open', 'close');
-                        tmpnode = $(".verse-ink-selected");
+                        tmpnode = $('.verse-ink-selected');
                         tmpnode.nextAll(tmpclass).first().addClass('markdown-markup-show');
                         break;
                   }
                   else if (classes[i].search('_close') !== -1) {
                         tmpclass = classes[i];
                         tmpclass = '.' + tmpclass.replace('close', 'open');
-                        tmpnode = $(".verse-ink-selected");
+                        tmpnode = $('.verse-ink-selected');
                         tmpnode.prevAll(tmpclass).first().addClass('markdown-markup-show');
                         break;
                   }
@@ -339,7 +355,12 @@ function autoToggleMarkups(s) {
 
 function optimizedRender(r, s) {
       $("br").remove();
-      var source, rhtml, rtext, rendered, renderedWithoutClass, rhtmlWithoutNbspAndClass;
+      var source,
+            rhtml,
+            rtext,
+            rendered,
+            renderedWithoutClass,
+            rhtmlWithoutNbspAndClass;
       var blocks = r.children();
       buildBlockSerials(blocks);
       s.markSelected();
@@ -347,8 +368,9 @@ function optimizedRender(r, s) {
       addingNewLineHolders(blocks);
       removingNewLineHolders();
       movingCusorIntoholders(s);
+
       source = blocks2source(blocks);
-      console.log(source);
+      //`console.log(source);
       rhtml = replaceAll(r.html(), "<br>", "");
       rtext = source;
       rendered = md.render(rtext);
@@ -361,8 +383,11 @@ function optimizedRender(r, s) {
             console.log("need to be rebuilt");
             r.html(rendered);
             s.restoreCusor(r);
+
       }
+
       buildBlockSerials(blocks);
+      addMarkdownElListeners(s);
 }
 
 function pasteHtmlAtCaret(html) {
@@ -399,10 +424,6 @@ function pasteHtmlAtCaret(html) {
       }
 }
 
-
-//should be run after rendering
-
-
 function bindCusorListener() {
       function setChangeListener(div, listener) {
             div.addEventListener("blur", listener);
@@ -430,11 +451,12 @@ function bindCusorListener() {
 }
 
 // the return key handler
-function addingNewlineHandler() {
+function keyHandler() {
       $('#rarea').keydown(function (e) {
             s = new Selection();
             // trap the return key being pressed
             if (e.keyCode === 13) {
+                  //inside a paragraph
                   if ($(s.sel.anchorNode).parents(".markdown-block").text().length === 0) {
                         insertNewline(s);
                         return false;
@@ -444,8 +466,7 @@ function addingNewlineHandler() {
       });
 }
 
-
-addingNewlineHandler();
+keyHandler();
 //the event listener for the source area
 $("#sarea").bind("DOMNodeInserted DOMNodeRemoved DOMCharacterDataModified", function () {
       if (this.locked === 1) {
