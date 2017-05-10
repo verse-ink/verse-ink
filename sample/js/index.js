@@ -105,7 +105,7 @@ Selection.prototype = {
 
 ///////////////////
 function purifyHTML(html) {
-      return html.replace(/<span class="verse-ink-newline-holder[^"]*"><\/span>/g, "")
+      return html.replace(/<span class="verse-ink-newline-holder[^"]*">(<br>)*<\/span>/g, "")
             .replace(/[ ]*(class|verse_ink_blockid)=\"[^\"]*\"[ ]*/g, '')
             .replace(/(&nbsp;| |\xa0)/g, '$nbsp;');
 }
@@ -120,7 +120,7 @@ function html2text(html) {
             .replace(/<\/\w><(p|div|pre)[^>]+>/g, "\n")
             .replace(/<[^<>]+>/g, '')//dropping all the tags
             .replace(/( |&nbsp;|\xa0)/g, "&nbsp;")// replacing common spaces
-            .replace(/awstreytcvghbjk6d5rytfyuvgb/g, '<span class="verse-ink-newline-holder"><\/span>')
+            .replace(/awstreytcvghbjk6d5rytfyuvgb/g, '<span class="verse-ink-newline-holder"><br><\/span>')
             .replace(/esxfcgsercvghbgybujnkijm/g, '<span class="verse-ink-caret"><\/span>');
       rtext = _.unescape(rtext);
       return rtext;
@@ -227,7 +227,6 @@ function mdinit() {
             langPrefix: 'language-', // CSS language prefix for fenced blocks
             linkify: false, // autoconvert URL-like texts to links
             typographer: true, // Enable smartypants and other sweet transforms
-            breaks: true, // options below are for demo only
             _highlight: true,
             _strict: false,
             _view: 'html', // html / src / debug
@@ -263,14 +262,13 @@ function insertNewline(s) {
       if (selectedBlock.length === 0) {
             selectedBlock = $(s.sel.anchorNode);
       }
-      var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="3"><span class="verse-ink-newline-holder"></span></p>')
+      var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="3"><span class="verse-ink-newline-holder"><br></span></p>')
             .insertAfter(selectedBlock);
       s.setCusorPosInEl(el.children()[0], 0);
 }
 
 function addMarkdownElListeners(s) {
       $('#rarea  img').click(function () {
-            console.log('!!!');
             s.setCusorPosInEl($(this).prev()[0], $(this).prev().text.length);
             autoToggleMarkups(s);
       });
@@ -282,7 +280,9 @@ function autoToggleMarkups(s) {
       if (!selection.isCollapsed || selection.rangeCount !== 1) return undefined;
       var aNode = selection.anchorNode;
       //parents detection
-
+      var classes,
+            tmpclass,
+            tmpnode;
       // todo 封装进对象
       if ($(aNode.parentNode).is("#sarea") || $(aNode.parentNode).parents("#sarea").length > 0) {
             return 0;
@@ -293,7 +293,7 @@ function autoToggleMarkups(s) {
 
       //inside a markup span
       if ($('.verse-ink-selected').hasClass('markdown-markup')) {
-            var classes, tmpclass, tmpnode;
+
             var selected = $('.verse-ink-selected');
             selected.addClass('markdown-markup-show');
             classes = selected[0].classList;
@@ -318,10 +318,22 @@ function autoToggleMarkups(s) {
       //previous
       if (selection.anchorOffset === 0) {
             if ($(aNode.parentNode).prev().hasClass("markdown-markup")) {
-                  $(aNode.parentNode).prev().addClass("markdown-markup-show");
+                  var nextNode = $(aNode.parentNode).prev();
+                  var classes = nextNode[0].classList;
+                  for (i = 0; i < classes.length; i++) {
+                        if (classes[i].search('_close') !== -1) {
+                              tmpclass = classes[i];
+                              tmpclass = '.' + tmpclass.replace('close', 'open');
+                              tmpnode = $(nextNode);
+                              tmpnode.prevAll(tmpclass).first().addClass('markdown-markup-show');
+                              break;
+                        }
+                  }
+                  $(aNode.parentNode).prev().addClass('markdown-markup-show');
             }
       }
 
+      // escape char
       if (selection.anchorOffset === 1) {
             $(aNode.parentElement).prev(".escapeBackslash").addClass('markdown-markup-show');
       }
@@ -346,7 +358,7 @@ function autoToggleMarkups(s) {
       }
 
       //child
-      $(aNode.parentElement).parents("strong,code,em,u,s,a").each(function () {
+      $(aNode).parents("strong,code,em,u,s,a").each(function () {
             $(this).next().addClass("markdown-markup-show");
             $(this).prev().addClass("markdown-markup-show");
       });
@@ -354,7 +366,6 @@ function autoToggleMarkups(s) {
 }
 
 function optimizedRender(r, s) {
-      $("br").remove();
       var source,
             rhtml,
             rtext,
@@ -362,6 +373,8 @@ function optimizedRender(r, s) {
             renderedWithoutClass,
             rhtmlWithoutNbspAndClass;
       var blocks = r.children();
+
+
       buildBlockSerials(blocks);
       s.markSelected();
       s.saveCusor();
@@ -370,20 +383,29 @@ function optimizedRender(r, s) {
       movingCusorIntoholders(s);
 
       source = blocks2source(blocks);
-      //`console.log(source);
+      console.log(source);
       rhtml = replaceAll(r.html(), "<br>", "");
       rtext = source;
       rendered = md.render(rtext);
       renderedWithoutClass = purifyHTML(rendered);
       rhtmlWithoutNbspAndClass = purifyHTML(rhtml);
-      //console.log("source: "+source);
+
+
       if (renderedWithoutClass === rhtmlWithoutNbspAndClass) {
             console.log("don't need be rebuilt");
       } else {
             console.log("need to be rebuilt");
             r.html(rendered);
-            s.restoreCusor(r);
 
+            //fxxx iceweasel, firefox, and monkey!
+            //todo 封装
+
+            $('.verse-ink-newline-holder').each(function () {
+                  if ($(this).text().length === 0) {
+                        $(this).html('<br>');
+                  }
+            });
+            s.restoreCusor(r);
       }
 
       buildBlockSerials(blocks);
@@ -454,11 +476,36 @@ function bindCusorListener() {
 function keyHandler() {
       $('#rarea').keydown(function (e) {
             s = new Selection();
-            // trap the return key being pressed
+            if (!s.sel.collapsed) return;
+
             if (e.keyCode === 13) {
                   //inside a paragraph
                   if ($(s.sel.anchorNode).parents(".markdown-block").text().length === 0) {
                         insertNewline(s);
+                        return false;
+                  }
+                  return true;
+            }
+
+            //backspace
+            if (e.keyCode === 8) {
+                  //inside a paragraph
+                  var anode = s.sel.anchorNode,
+                        offset = s.sel.anchorOffset,
+                        imgEl,
+                        spanEl;
+
+                  //quick deletion of images
+                  if ($(anode).is('p') && $($(anode).children()[offset - 1]).is('img')) {
+                        imgEl = $(anode).children()[offset - 1];
+                        spanEl = $(anode).children()[offset - 2];
+                        $(imgEl).remove();
+
+                        //reusing the span node
+                        $(spanEl).text("");
+                        $(spanEl).removeClass('markdown-markup markdown-markup-open image').addClass('markdown-text');
+                        s.setCusorPosInEl(spanEl, 0);
+
                         return false;
                   }
                   return true;
@@ -494,11 +541,9 @@ $(document).ready(function () {
             document.execCommand("insertHTML", false, replaceAll(temp.textContent, "\n", "<br>"));
             sourceArea.locked = 0;
             $(sourceArea).trigger("DOMNodeInserted");
-            //console.log("1\n");
       });
 });
 
 $("#rarea").bind("DOMNodeInserted", function () {
-      // console.log($(this).html());
-      // console.log("end"+window.getSelection().anchorNode.textContent)
+
 });
