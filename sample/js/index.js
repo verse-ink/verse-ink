@@ -18,6 +18,8 @@ Selection.prototype = {
             $(".verse-ink-selected").removeClass("verse-ink-selected");
             if (aNode.nodeType === 3) {
                   $(aNode.parentNode).addClass("verse-ink-selected");
+            } else if ($(aNode).is('br')) {
+                  $(aNode.parentNode).addClass("verse-ink-selected");
             } else {
                   $(aNode).addClass("verse-ink-selected");
             }
@@ -56,9 +58,7 @@ Selection.prototype = {
             if (targetOffset <= currentOffset + currentObj.text().length) {//inside this element
 
                   if (currentObj.contents().length === 0) {//this is a text node
-                        //setCaretPosition(currentObj[0],targetOffset-currentOffset);
                         this.setCusorPosInEl(currentObj[0], targetOffset - currentOffset);
-                        //console.log(targetOffset - currentOffset);
                         return -1;
                   }
                   else {//this contains childs
@@ -93,6 +93,11 @@ Selection.prototype = {
       },      //inside a markup span
 
       setCusorPosInEl: function (el, offset) {
+            //patch the firefox
+            if ($(el).is('br')){
+                  el=el.parentNode;
+            }
+            
             var range = document.createRange();
             var sel = this.sel;
             range.setStart(el, offset);
@@ -116,7 +121,7 @@ function replaceAll(str, match, rep) {
 function html2text(html) {
       var rtext = html.replace(/<span class="verse-ink-newline-holder[^"]*">(<br>)*<\/span>/g, "awstreytcvghbjk6d5rytfyuvgb")
             .replace(/<span class="verse-ink-caret"><\/span>/g, "esxfcgsercvghbgybujnkijm")
-            .replace(/<br(\/)?>/g, "\n\n")
+            .replace(/<br(\/)?>/g, "")
             .replace(/<\/\w><(p|div|pre)[^>]+>/g, "\n")
             .replace(/<[^<>]+>/g, '')//dropping all the tags
             .replace(/( |&nbsp;|\xa0)/g, "&nbsp;")// replacing common spaces
@@ -193,7 +198,8 @@ function addingNewLineHolders(dirtys) {
       dirtys.each(function () {
             if ($(this).text().length === 0 && $(this).html().search("newline-holder") === -1) {
                   //var offset=getCaretCharacterOffsetWithin($("#rarea")[0]);
-                  $(this).append('<span class="verse-ink-newline-holder"><\/span>');
+                  $(this).children('br').remove();
+                  $(this).append('<span class="verse-ink-newline-holder"><br><\/span>');
             }
       });
 }
@@ -262,9 +268,9 @@ function insertNewline(s) {
       if (selectedBlock.length === 0) {
             selectedBlock = $(s.sel.anchorNode);
       }
-      var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="3"><span class="verse-ink-newline-holder"><br></span></p>')
+      var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="-1"><span class="verse-ink-newline-holder"><br></span></p>')
             .insertAfter(selectedBlock);
-      s.setCusorPosInEl(el.children()[0], 0);
+      s.setCusorPosInEl(el.children()[0], 1);
 }
 
 function addMarkdownElListeners(s) {
@@ -373,8 +379,8 @@ function optimizedRender(r, s) {
             renderedWithoutClass,
             rhtmlWithoutNbspAndClass;
       var blocks = r.children();
-
-
+      if (window.kill == 1)return;
+      //console.log(r.html());
       buildBlockSerials(blocks);
       s.markSelected();
       s.saveCusor();
@@ -382,15 +388,18 @@ function optimizedRender(r, s) {
       removingNewLineHolders();
       movingCusorIntoholders(s);
 
+
       source = blocks2source(blocks);
-      console.log(source);
+      //console.log(source);
       rhtml = replaceAll(r.html(), "<br>", "");
       rtext = source;
       rendered = md.render(rtext);
       renderedWithoutClass = purifyHTML(rendered);
       rhtmlWithoutNbspAndClass = purifyHTML(rhtml);
-
-
+      console.log('----------begin');
+      console.log(rhtml);
+      console.log(rtext);
+      console.log(rendered);
       if (renderedWithoutClass === rhtmlWithoutNbspAndClass) {
             console.log("don't need be rebuilt");
       } else {
@@ -476,7 +485,7 @@ function bindCusorListener() {
 function keyHandler() {
       $('#rarea').keydown(function (e) {
             s = new Selection();
-            if (!s.sel.collapsed) return;
+            //if (!s.sel.collapsed) return;
 
             if (e.keyCode === 13) {
                   //inside a paragraph
@@ -507,6 +516,10 @@ function keyHandler() {
                         s.setCusorPosInEl(spanEl, 0);
 
                         return false;
+                  }
+
+                  if ($(anode).is('.verse-ink-newline-holder') && $(anode).text().length === 0) {
+                        $(anode).prev('br').remove();
                   }
                   return true;
             }
