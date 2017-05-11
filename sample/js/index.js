@@ -94,10 +94,10 @@ Selection.prototype = {
 
       setCusorPosInEl: function (el, offset) {
             //patch the firefox
-            if ($(el).is('br')){
-                  el=el.parentNode;
+            if ($(el).is('br')) {
+                  el = el.parentNode;
             }
-            
+
             var range = document.createRange();
             var sel = this.sel;
             range.setStart(el, offset);
@@ -274,7 +274,7 @@ function insertNewline(s) {
 }
 
 function addMarkdownElListeners(s) {
-      $('#rarea  img').click(function () {
+      $('#rarea').find('img').click(function () {
             s.setCusorPosInEl($(this).prev()[0], $(this).prev().text.length);
             autoToggleMarkups(s);
       });
@@ -282,13 +282,16 @@ function addMarkdownElListeners(s) {
 
 function autoToggleMarkups(s) {
       s.markSelected();
-      var selection = s.sel;
-      if (!selection.isCollapsed || selection.rangeCount !== 1) return undefined;
-      var aNode = selection.anchorNode;
-      //parents detection
-      var classes,
+      var   selection = s.sel,
+            aNode = selection.anchorNode,
+            selected = $('.verse-ink-selected'),
+            classes,
             tmpclass,
-            tmpnode;
+            tmpnode,
+            nextNode;
+
+      if (!selection.isCollapsed || selection.rangeCount !== 1) return undefined;
+
       // todo 封装进对象
       if ($(aNode.parentNode).is("#sarea") || $(aNode.parentNode).parents("#sarea").length > 0) {
             return 0;
@@ -298,23 +301,21 @@ function autoToggleMarkups(s) {
       $('.markdown-markup-show').not('.verse-ink-selected').removeClass('markdown-markup-show');
 
       //inside a markup span
-      if ($('.verse-ink-selected').hasClass('markdown-markup')) {
-
-            var selected = $('.verse-ink-selected');
+      if (selected.hasClass('markdown-markup')) {
             selected.addClass('markdown-markup-show');
             classes = selected[0].classList;
             for (i = 0; i < classes.length; i++) {
                   if (classes[i].search('_open') !== -1) {
                         tmpclass = classes[i];
                         tmpclass = '.' + tmpclass.replace('open', 'close');
-                        tmpnode = $('.verse-ink-selected');
+                        tmpnode = selected;
                         tmpnode.nextAll(tmpclass).first().addClass('markdown-markup-show');
                         break;
                   }
                   else if (classes[i].search('_close') !== -1) {
                         tmpclass = classes[i];
                         tmpclass = '.' + tmpclass.replace('close', 'open');
-                        tmpnode = $('.verse-ink-selected');
+                        tmpnode = selected;
                         tmpnode.prevAll(tmpclass).first().addClass('markdown-markup-show');
                         break;
                   }
@@ -324,8 +325,8 @@ function autoToggleMarkups(s) {
       //previous
       if (selection.anchorOffset === 0) {
             if ($(aNode.parentNode).prev().hasClass("markdown-markup")) {
-                  var nextNode = $(aNode.parentNode).prev();
-                  var classes = nextNode[0].classList;
+                  nextNode = $(aNode.parentNode).prev();
+                  classes = nextNode[0].classList;
                   for (i = 0; i < classes.length; i++) {
                         if (classes[i].search('_close') !== -1) {
                               tmpclass = classes[i];
@@ -339,7 +340,7 @@ function autoToggleMarkups(s) {
             }
       }
 
-      // escape char
+      // escaped char
       if (selection.anchorOffset === 1) {
             $(aNode.parentElement).prev(".escapeBackslash").addClass('markdown-markup-show');
       }
@@ -347,13 +348,13 @@ function autoToggleMarkups(s) {
       //next
       if (selection.anchorOffset === selection.anchorNode.length) {
             if ($(aNode.parentNode).next().hasClass("markdown-markup")) {
-                  var nextNode = $(aNode.parentNode).next();
-                  var classes = nextNode[0].classList;
+                  nextNode = $(aNode.parentNode).next();
+                  classes = nextNode[0].classList;
                   for (i = 0; i < classes.length; i++) {
                         if (classes[i].search('_open') !== -1) {
-                              var tmpclass = classes[i];
+                              tmpclass = classes[i];
                               tmpclass = '.' + tmpclass.replace('open', 'close');
-                              var tmpnode = $(nextNode);
+                              tmpnode = $(nextNode);
                               tmpnode.nextAll(tmpclass).first().addClass('markdown-markup-show');
                               break;
                         }
@@ -363,7 +364,7 @@ function autoToggleMarkups(s) {
 
       }
 
-      //child
+      //inside a textnode of strong,code,...
       $(aNode).parents("strong,code,em,u,s,a").each(function () {
             $(this).next().addClass("markdown-markup-show");
             $(this).prev().addClass("markdown-markup-show");
@@ -379,8 +380,9 @@ function optimizedRender(r, s) {
             renderedWithoutClass,
             rhtmlWithoutNbspAndClass;
       var blocks = r.children();
-      if (window.kill == 1)return;
-      //console.log(r.html());
+      if (window.kill === 1)return;
+
+
       buildBlockSerials(blocks);
       s.markSelected();
       s.saveCusor();
@@ -390,30 +392,18 @@ function optimizedRender(r, s) {
 
 
       source = blocks2source(blocks);
-      //console.log(source);
       rhtml = replaceAll(r.html(), "<br>", "");
       rtext = source;
       rendered = md.render(rtext);
       renderedWithoutClass = purifyHTML(rendered);
       rhtmlWithoutNbspAndClass = purifyHTML(rhtml);
-      console.log('----------begin');
-      console.log(rhtml);
-      console.log(rtext);
-      console.log(rendered);
+
+
       if (renderedWithoutClass === rhtmlWithoutNbspAndClass) {
-            console.log("don't need be rebuilt");
+            console.log("don't need to be rebuilt");
       } else {
-            console.log("need to be rebuilt");
+            console.log("have to be rebuilt");
             r.html(rendered);
-
-            //fxxx iceweasel, firefox, and monkey!
-            //todo 封装
-
-            $('.verse-ink-newline-holder').each(function () {
-                  if ($(this).text().length === 0) {
-                        $(this).html('<br>');
-                  }
-            });
             s.restoreCusor(r);
       }
 
@@ -485,8 +475,9 @@ function bindCusorListener() {
 function keyHandler() {
       $('#rarea').keydown(function (e) {
             s = new Selection();
-            //if (!s.sel.collapsed) return;
+            if (!s.sel.isCollapsed) return;
 
+            //enter
             if (e.keyCode === 13) {
                   //inside a paragraph
                   if ($(s.sel.anchorNode).parents(".markdown-block").text().length === 0) {
@@ -502,7 +493,8 @@ function keyHandler() {
                   var anode = s.sel.anchorNode,
                         offset = s.sel.anchorOffset,
                         imgEl,
-                        spanEl;
+                        spanEl,
+                        selectedBlock = $(anode).parents('.markdown-block');
 
                   //quick deletion of images
                   if ($(anode).is('p') && $($(anode).children()[offset - 1]).is('img')) {
@@ -518,8 +510,15 @@ function keyHandler() {
                         return false;
                   }
 
-                  if ($(anode).is('.verse-ink-newline-holder') && $(anode).text().length === 0) {
-                        $(anode).prev('br').remove();
+                  //fixing firefox bug by manually handle the backspace key
+                  if (s.getCaretCharacterOffsetWithin(selectedBlock[0]) === 0 && selectedBlock.prev().length !== 0) {
+                        var htmlToInsert = selectedBlock.html();
+
+                        console.log('bug!!!');
+                        var tmpels = $(htmlToInsert).insertAfter(selectedBlock.prev().children().last());
+                        selectedBlock.remove();
+                        s.setCusorPosInEl(tmpels[0], 0);
+                        return false;
                   }
                   return true;
             }
