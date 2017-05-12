@@ -19,7 +19,13 @@
     display:inline;
 }
 
-.markdown-block{
+p.markdown-block{
     display:block;
     height:1em;
+}
+
+
+
+.verse-ink-selected + hr {
+    display:none;
 }

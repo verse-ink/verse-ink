@@ -194,8 +194,8 @@ function dirtyCheck(objBlocks) {
       return dirty;
 }
 
-function addingNewLineHolders(dirtys) {
-      dirtys.each(function () {
+function addingNewLineHolders(blocks) {
+      blocks.each(function () {
             if ($(this).text().length === 0 && $(this).html().search("newline-holder") === -1) {
                   //var offset=getCaretCharacterOffsetWithin($("#rarea")[0]);
                   $(this).children('br').remove();
@@ -270,12 +270,18 @@ function insertNewline(s) {
       }
       var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="-1"><span class="verse-ink-newline-holder"><br></span></p>')
             .insertAfter(selectedBlock);
-      s.setCusorPosInEl(el.children()[0], 1);
+      s.setCusorPosInEl(el.children()[0], 0);
 }
 
 function addMarkdownElListeners(s) {
+
       $('#rarea').find('img').click(function () {
-            s.setCusorPosInEl($(this).prev()[0], $(this).prev().text.length);
+            s.setCusorPosInEl($(this).prev()[0],1);
+            autoToggleMarkups(s);
+      });
+
+      $('#rarea').find('hr').click(function () {
+            s.setCusorPosInEl($(this).prev()[0],1);
             autoToggleMarkups(s);
       });
 }
@@ -372,6 +378,51 @@ function autoToggleMarkups(s) {
       return true;
 }
 
+function handleSelection(s) {
+// rules for selection based change before rendering
+      movingCusorIntoholders(s);
+      //rules for hr
+      if ($(s.sel.anchorNode.parentNode).is('.markdown-markup-hr')){
+            if ($(s.sel.anchorNode.parentNode).parent().next().length===0){
+                  //console.log("shouldInsert");
+                  var selectedBlock = $(s.sel.anchorNode).parents('.markdown-block');
+                  if (selectedBlock.length === 0) {
+                        selectedBlock = $(s.sel.anchorNode);
+                  }
+                  var el = $('<p class="markdown-paragraph markdown-block" verse_ink_blockid="-1"><span class="verse-ink-newline-holder"><br></span></p>')
+                        .insertAfter(selectedBlock);
+            }
+
+      }
+
+      if ($(s.sel.anchorNode).is('div .markdown-block')){
+
+            if ($(s.sel.anchorNode).children('hr').length===0) return;
+            // get down from top
+            if (s.sel.anchorOffset===1){
+                  var el=$(s.sel.anchorNode).next().children()[0];
+                  s.setCusorPosInEl(el,0);
+            }
+            //get up
+            if (s.sel.anchorOffset===2){
+                  var el=$(s.sel.anchorNode).children().first().contents()[0];
+                  var len=$(el).text().length;
+                  s.setCusorPosInEl(el,len);
+            }
+      }
+      // fixing the firefox
+      if ($(s.sel.anchorNode.parentNode).is('div .markdown-block')){
+
+            if ($(s.sel.anchorNode.parentNode).children('hr').length===0) return;
+            // get down from top
+                  var el=$(s.sel.anchorNode.parentNode).next().children()[0];
+                  s.setCusorPosInEl(el,0);
+
+      }
+
+
+}
+
 function optimizedRender(r, s) {
       var source,
             rhtml,
@@ -379,25 +430,29 @@ function optimizedRender(r, s) {
             rendered,
             renderedWithoutClass,
             rhtmlWithoutNbspAndClass;
-      var blocks = r.children();
+
       if (window.kill === 1)return;
 
-
+      //pre-render DOM and selection operation
+      var blocks = r.children();
       buildBlockSerials(blocks);
       s.markSelected();
-      s.saveCusor();
+
+      //hold the empty lines
       addingNewLineHolders(blocks);
       removingNewLineHolders();
-      movingCusorIntoholders(s);
+      //DOM and selection change based on cusor pos
+      handleSelection(s);
 
 
-      source = blocks2source(blocks);
+      s.saveCusor();
+
+      source = blocks2source(r.children());
       rhtml = replaceAll(r.html(), "<br>", "");
       rtext = source;
       rendered = md.render(rtext);
       renderedWithoutClass = purifyHTML(rendered);
       rhtmlWithoutNbspAndClass = purifyHTML(rhtml);
-
 
       if (renderedWithoutClass === rhtmlWithoutNbspAndClass) {
             console.log("don't need to be rebuilt");
