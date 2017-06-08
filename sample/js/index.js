@@ -86,7 +86,7 @@ Selection.prototype = {
             buildBlockSerials(childs);
             for (i = 0; i < childs.length; i++) {
                   if ($(childs[i]).attr("verse_ink_blockid") === this.cblockid) {
-                        this.setCaretOffsetWithin($(childs[i]), 0, this.coffset);
+                        this.setCaretOffsetWithin($(childs[i]), 0, Math.min(this.coffset,$(childs[i]).text().length));
                         break;
                   }
             }
@@ -111,6 +111,7 @@ Selection.prototype = {
 ///////////////////
 function purifyHTML(html) {
       return html.replace(/<span class="verse-ink-newline-holder[^"]*">(<br>)*<\/span>/g, "")
+            .replace(/(<\/span>){0,1}<span class="verse-ink-caret"><\/span>(<span[^>]*>){0,1}/g,'')
             .replace(/[ ]*(class|verse_ink_blockid)=\"[^\"]*\"[ ]*/g, '')
             .replace(/(&nbsp;| |\xa0)/g, '$nbsp;');
 }
@@ -417,10 +418,7 @@ function handleSelection(s) {
             // get down from top
                   var el=$(s.sel.anchorNode.parentNode).next().children()[0];
                   s.setCusorPosInEl(el,0);
-
       }
-
-
 }
 
 function optimizedRender(r, s) {
@@ -447,6 +445,7 @@ function optimizedRender(r, s) {
 
       s.saveCusor();
 
+
       source = blocks2source(r.children());
       rhtml = replaceAll(r.html(), "<br>", "");
       rtext = source;
@@ -459,11 +458,24 @@ function optimizedRender(r, s) {
       } else {
             console.log("have to be rebuilt");
             r.html(rendered);
+            //restorec(s);
             s.restoreCusor(r);
       }
 
+
+      //caret.remove();
       buildBlockSerials(blocks);
       addMarkdownElListeners(s);
+}
+
+function savec(){
+      pasteHtmlAtCaret('<span class="verse-ink-caret"></span>');
+}
+
+function restorec(s){
+      var caret=$('.verse-ink-caret').first();
+
+
 }
 
 function pasteHtmlAtCaret(html) {
