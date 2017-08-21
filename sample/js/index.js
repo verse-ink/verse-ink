@@ -25,7 +25,7 @@ Selection.prototype = {
             }
       },
       saveCusor: function () {
-            var selectedBlock = $('.verse-ink-selected').parents(".markdown-block");
+            var selectedBlock = $('.verse-ink-selected').parents("#rarea > .markdown-block");
             if (selectedBlock.length === 0) {
                   selectedBlock = $('.verse-ink-selected.markdown-block');
                   //var coffset=getCaretCharacterOffsetWithin(selectedBlock[0])
@@ -34,8 +34,8 @@ Selection.prototype = {
                   }
             }
             this.cblockid = (selectedBlock.attr("verse_ink_blockid"));
-            //console.log($('.verse-ink-selected').parents(".markdown-block").length)
-            this.coffset = this.getCaretCharacterOffsetWithin(selectedBlock[0]);
+            //this.coffset = this.getCaretCharacterOffsetWithin(selectedBlock[0]);
+            this.coffset = this.getCusorCharaterOffset(selectedBlock[0]);
       },
       getCaretCharacterOffsetWithin: function (element) {
             var caretOffset = 0;
@@ -49,9 +49,15 @@ Selection.prototype = {
                   preCaretRange.selectNodeContents(element);
                   preCaretRange.setEnd(range.endContainer, range.endOffset);
                   caretOffset = preCaretRange.toString().length;
-                  //console.log(':' + caretOffset);
             }
 
+            //patching the ul
+            if ($(element).is("ul")) {
+                  // caretOffset-=2;
+            }
+            if ($(element).is("li")) {
+                  //caretOffset-=1;
+            }
             return caretOffset;
       },
       setCaretOffsetWithin: function (currentObj, currentOffset, targetOffset) {
@@ -81,16 +87,6 @@ Selection.prototype = {
                   return currentObj.text().length;
             }
       },
-      restoreCusor: function (rarea) {
-            var childs = rarea.children();
-            buildBlockSerials(childs);
-            for (i = 0; i < childs.length; i++) {
-                  if ($(childs[i]).attr("verse_ink_blockid") === this.cblockid) {
-                        this.setCaretOffsetWithin($(childs[i]), 0, Math.min(this.coffset,$(childs[i]).text().length));
-                        break;
-                  }
-            }
-      },      //inside a markup span
 
       setCusorPosInEl: function (el, offset) {
             //patch the firefox
@@ -104,6 +100,81 @@ Selection.prototype = {
             range.collapse(true);
             sel.removeAllRanges();
             sel.addRange(range);
+      },
+      getCusorCharaterOffset: function (endSelector) {
+            var tmpNode = this.sel.anchorNode,
+                  wordcount = this.sel.anchorOffset,
+                  words = "";
+            while (!$(tmpNode).is(endSelector)) {
+                  while (tmpNode.previousSibling !== null) {
+                        tmpNode = tmpNode.previousSibling;
+                        if (tmpNode.tagName === "P" && tmpNode.textContent.length === 0) {
+                              console.log("empty line" + tmpNode.textContent + "edl" + Math.random());
+                              wordcount += 1;
+                        }
+                        if (tmpNode.tagName === "P") {
+                              words = "\n" + words;
+                        }
+                        words = tmpNode.textContent + words;
+                  }
+                  tmpNode = tmpNode.parentNode;
+
+            }
+            words = words.replace(/(\n){2,}/g, "\n")
+                  .replace(/^\n/g, "");
+            return words.length + wordcount;
+
+      },
+
+      setCusorPosInWordCount: function (element, count, currentstr) {
+            if (element.classList && element.classList.value && element.classList.value.search("verse-ink-newline-holder") !== -1) {
+                  this.setCusorPosInEl(element, 0);
+                  return -1;
+            }
+            // all the unnecessary \n will be of the same offset. So, we need to ignore them.
+            if (count <= purifyRawText(currentstr + element.textContent).length) {//inside this element
+                  if (element.nextSibling !== null &&
+                        element.nextSibling.nodeType !== 3 &&
+                        element.nextSibling.tagName !== "BR" &&
+                        count === purifyRawText(currentstr + element.textContent).length &&
+                        element.textContent.charAt(element.textContent.length - 1) === '\n') {
+                        return 6;
+                  }
+                  if (element.childNodes.length === 0 || element.nodeType === 3) {//this is a text node
+                        this.setCusorPosInEl(element, count - purifyRawText(currentstr).length);
+                        return -1;
+                  }
+                  else {//this contains childs
+                        var tmpadd = 0;
+                        var tmpstr = "";
+                        for (var i = 0; i < element.childNodes.length; i++) {// recursively trying all the childs
+                              tmpadd = this.setCusorPosInWordCount(element.childNodes[i], count, purifyRawText(currentstr + tmpstr));
+                              if (tmpadd < 0) {// found the node
+                                    return -1;
+                              }
+                              else {//not in this one
+                                    tmpstr = purifyRawText(tmpstr + element.childNodes[i].textContent);
+                              }
+
+                        }
+                        console.log("[bug] you are in the Neverland");//should never be executed
+                        return 5;
+                  }
+            } else {//the caret should be in some element after this one
+                  return 4;
+            }
+      },
+      restoreCusor: function (rarea) {
+            var childs = rarea.children();
+            var targetoff = 0;
+            buildBlockSerials(childs);
+            for (i = 0; i < childs.length; i++) {
+                  if ($(childs[i]).attr("verse_ink_blockid") === this.cblockid) {
+                        //this.setCaretOffsetWithin($(childs[i]), 0, targetoff + Math.min(this.coffset, $(childs[i]).text().length));
+                        this.setCusorPosInWordCount(childs[i], targetoff + Math.min(this.coffset, $(childs[i]).text().length), "");
+                        break;
+                  }
+            }
       }
 
 };
@@ -111,7 +182,7 @@ Selection.prototype = {
 ///////////////////
 function purifyHTML(html) {
       return html.replace(/<span class="verse-ink-newline-holder[^"]*">(<br>)*<\/span>/g, "")
-            .replace(/(<\/span>){0,1}<span class="verse-ink-caret"><\/span>(<span[^>]*>){0,1}/g,'')
+            .replace(/(<\/span>){0,1}<span class="verse-ink-caret"><\/span>(<span[^>]*>){0,1}/g, '')
             .replace(/[ ]*(class|verse_ink_blockid)=\"[^\"]*\"[ ]*/g, '')
             .replace(/(&nbsp;| |\xa0)/g, '$nbsp;');
 }
@@ -123,7 +194,9 @@ function html2text(html) {
       var rtext = html.replace(/<span class="verse-ink-newline-holder[^"]*">(<br>)*<\/span>/g, "awstreytcvghbjk6d5rytfyuvgb")
             .replace(/<span class="verse-ink-caret"><\/span>/g, "esxfcgsercvghbgybujnkijm")
             .replace(/<br(\/)?>/g, "")
-            .replace(/<\/\w><(p|div|pre)[^>]+>/g, "\n")
+            .replace(/\n/g, "")
+            .replace(/<\/\w><(p|div|pre|li)[^>]+>/g, "\n")
+            .replace(/<\/li[^>]*>/g, "\n")
             .replace(/<[^<>]+>/g, '')//dropping all the tags
             .replace(/( |&nbsp;|\xa0)/g, "&nbsp;")// replacing common spaces
             .replace(/awstreytcvghbjk6d5rytfyuvgb/g, '<span class="verse-ink-newline-holder"><br><\/span>')
@@ -171,6 +244,7 @@ function drawSequenceDiagram(str) {
 }
 
 function buildBlockSerials(objBlocks) {
+      objBlocks.addClass("verse-ink-block");
       objBlocks.addClass("markdown-block");
       if (!objBlocks) {
             return;
@@ -219,8 +293,18 @@ function removingNewLineHolders() {
 }
 
 function movingCusorIntoholders(s) {
+      //move into span in ol/ul
+      var anode = $(s.sel.anchorNode);
+      if (anode.parent().is("li") && anode.parent().parent().is("ol")) {
+            s.setCusorPosInEl(anode.parent().children("span")[0], 0);
+      }
+      if (anode.is("li") && anode.children("span").length !== 0) {
+            s.setCusorPosInEl(anode.children("span")[0], 0);
+      } else if (anode.parent("ul").length !== 0) {
+            s.setCusorPosInEl(anode.parent().children().children("span")[0], 0);
+      }
       //move the cusor into a span tag in new-line
-      var contentEls = $(s.sel.anchorNode).contents(".verse-ink-newline-holder");
+      var contentEls = anode.contents(".verse-ink-newline-holder");
       if (contentEls.length > 0) {
             s.setCusorPosInEl(contentEls[0], 0);
       }
@@ -277,19 +361,19 @@ function insertNewline(s) {
 function addMarkdownElListeners(s) {
 
       $('#rarea').find('img').click(function () {
-            s.setCusorPosInEl($(this).prev()[0],1);
+            s.setCusorPosInEl($(this).prev()[0], 1);
             autoToggleMarkups(s);
       });
 
       $('#rarea').find('hr').click(function () {
-            s.setCusorPosInEl($(this).prev()[0],1);
+            s.setCusorPosInEl($(this).prev()[0], 1);
             autoToggleMarkups(s);
       });
 }
 
 function autoToggleMarkups(s) {
       s.markSelected();
-      var   selection = s.sel,
+      var selection = s.sel,
             aNode = selection.anchorNode,
             selected = $('.verse-ink-selected'),
             classes,
@@ -381,11 +465,12 @@ function autoToggleMarkups(s) {
 
 function handleSelection(s) {
 // rules for selection based change before rendering
-      movingCusorIntoholders(s);
+      //movingCusorIntoholders(s);
+
+
       //rules for hr
-      if ($(s.sel.anchorNode.parentNode).is('.markdown-markup-hr')){
-            if ($(s.sel.anchorNode.parentNode).parent().next().length===0){
-                  //console.log("shouldInsert");
+      if ($(s.sel.anchorNode.parentNode).is('.markdown-markup-hr')) {
+            if ($(s.sel.anchorNode.parentNode).parent().next().length === 0) {
                   var selectedBlock = $(s.sel.anchorNode).parents('.markdown-block');
                   if (selectedBlock.length === 0) {
                         selectedBlock = $(s.sel.anchorNode);
@@ -396,28 +481,30 @@ function handleSelection(s) {
 
       }
 
-      if ($(s.sel.anchorNode).is('div .markdown-block')){
+      if ($(s.sel.anchorNode).is('div .markdown-block')) {
 
-            if ($(s.sel.anchorNode).children('hr').length===0) return;
+            if ($(s.sel.anchorNode).children('hr').length === 0) return;
             // get down from top
-            if (s.sel.anchorOffset===1){
-                  var el=$(s.sel.anchorNode).next().children()[0];
-                  s.setCusorPosInEl(el,0);
+            if (s.sel.anchorOffset === 1) {
+                  var el = $(s.sel.anchorNode).next().children()[0];
+                  s.setCusorPosInEl(el, 0);
             }
             //get up
-            if (s.sel.anchorOffset===2){
-                  var el=$(s.sel.anchorNode).children().first().contents()[0];
-                  var len=$(el).text().length;
-                  s.setCusorPosInEl(el,len);
+            if (s.sel.anchorOffset === 2) {
+                  var el = $(s.sel.anchorNode).children().first().contents()[0];
+                  var len = $(el).text().length;
+                  s.setCusorPosInEl(el, len);
             }
       }
-      // fixing the firefox
-      if ($(s.sel.anchorNode.parentNode).is('div .markdown-block')){
 
-            if ($(s.sel.anchorNode.parentNode).children('hr').length===0) return;
+      //rules for list:
+      // fixing the firefox
+      if ($(s.sel.anchorNode.parentNode).is('div .markdown-block')) {
+
+            if ($(s.sel.anchorNode.parentNode).children('hr').length === 0) return;
             // get down from top
-                  var el=$(s.sel.anchorNode.parentNode).next().children()[0];
-                  s.setCusorPosInEl(el,0);
+            var el = $(s.sel.anchorNode.parentNode).next().children()[0];
+            s.setCusorPosInEl(el, 0);
       }
 }
 
@@ -444,7 +531,7 @@ function optimizedRender(r, s) {
 
 
       s.saveCusor();
-
+      //console.log(getCusorCharaterOffset(s, ".verse-ink-block"));
 
       source = blocks2source(r.children());
       rhtml = replaceAll(r.html(), "<br>", "");
@@ -462,21 +549,30 @@ function optimizedRender(r, s) {
             s.restoreCusor(r);
       }
 
+      movingCusorIntoholders(s);
 
       //caret.remove();
       buildBlockSerials(blocks);
       addMarkdownElListeners(s);
 }
 
-function savec(){
+function savec() {
       pasteHtmlAtCaret('<span class="verse-ink-caret"></span>');
 }
 
-function restorec(s){
-      var caret=$('.verse-ink-caret').first();
+function restorec(s) {
+      var caret = $('.verse-ink-caret').first();
 
 
 }
+
+
+function purifyRawText(s) {
+      return s.replace(/(\n){2,}/g, "\n")
+            .replace(/^\n/g, "");
+      //.replace(/\n$/g, "");
+}
+
 
 function pasteHtmlAtCaret(html) {
       var sel, range;
@@ -600,7 +696,6 @@ $("#sarea").bind("DOMNodeInserted DOMNodeRemoved DOMCharacterDataModified", func
       }
       var source = $(this).html();
       source = HTML2raw(source);
-      //console.log(source);
       $("#tarea").text($(this).html());
       var rarea = $("#rarea");
       rarea.html(md.render(source));
