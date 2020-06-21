@@ -1,0 +1,7 @@
+src/markdown-it/coverage/
+src/markdown-it/demo/
+src/markdown-it/dist/
+src/markdown-it/node_modules
+src/markdown-it/support/demo_template/sample.js
+src/markdown-it/benchmark/extra/
+cypress
