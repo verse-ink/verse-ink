@@ -14,7 +14,7 @@ const makeInlineImage = (setSelection)=>(props) => {
     const entity = block.getEntityAt(i);
     const imgInfo = (contentState.getEntity(entity).getData()).imgInfo;
     return (
-        <span data-offset-key={props.offsetKey} style={{fontSize: 0}}>
+        <span data-offset-key={props.offsetKey}>
              <img src={imgInfo.src} alt={imgInfo.alt || "Image"} title={imgInfo.title} height={80} onClick={() => {
                  setSelection(props.blockKey, props.start+2);
              }}/>

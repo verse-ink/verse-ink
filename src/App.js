@@ -16,8 +16,11 @@ function App() {
         });
         setEditorState(editorState => {
             const new_editor_state = EditorState.forceSelection(editorState, selectionState);
-            const renderResult = renderSelectionChange(convertToRaw(editorState.getCurrentContent()), new_editor_state.getSelection());
-            const contentState = convertFromRaw(renderResult);
+            let contentState = null;
+            const renderResult = (new BlockRender(new_editor_state, editorState)).render();//render AST
+            contentState = ContentState.createFromBlockArray(renderResult.blocks, renderResult.entityMap);
+            Entity.__loadWithEntities(renderResult.entityMap);
+            contentState = renderSelectionChange1(contentState, new_editor_state.getSelection());//render selection
             const editorState_content_updated = EditorState.push(new_editor_state, contentState, 'whatever');
             return EditorState.forceSelection(editorState_content_updated, new_editor_state.getSelection());
         });
@@ -30,14 +33,10 @@ function App() {
     const onChange = (new_editor_state) => setEditorState(editorState => {
         let renderResult = null;
         let contentState = null;
-        //if (editorState.getCurrentContent() === new_editor_state.getCurrentContent()) {
-        //    contentState = renderSelectionChange1(new_editor_state.getCurrentContent(), new_editor_state.getSelection());
-        //} else {
         renderResult = (new BlockRender(new_editor_state, editorState)).render();//render AST
         contentState = ContentState.createFromBlockArray(renderResult.blocks, renderResult.entityMap);
         Entity.__loadWithEntities(renderResult.entityMap);
         contentState = renderSelectionChange1(contentState, new_editor_state.getSelection());//render selection
-        // }
         const editorState_content_updated = EditorState.push(new_editor_state, contentState, 'whatever');
         return EditorState.forceSelection(editorState_content_updated, new_editor_state.getSelection());
     });
@@ -46,7 +45,13 @@ function App() {
         <div>
             <div><Editor customStyleMap={InlineStyleMap} editorState={editorState} onChange={onChange}/></div>
             <hr/>
-            <div>{JSON.stringify(editorState.getSelection())}
+            <div>
+                entity:
+                {JSON.stringify(editorState.getCurrentContent().getAllEntities())}
+            </div>
+            <hr/>
+            <div>
+                all:
             </div>
         </div>
     );

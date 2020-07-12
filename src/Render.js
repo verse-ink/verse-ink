@@ -40,7 +40,6 @@ export class BlockRender {
     copyBlockFromNew(inx) {
         window.a=this.focusKeys;
         const currentBlock = this.focusKeys.has(this.new_content[inx].getKey()) ? this.new_content[inx].set('data',Math.random()) : this.new_content[inx];
-        console.log(currentBlock.characterList);
         currentBlock.characterList&&currentBlock.characterList.forEach(i => {
             const e = i.getEntity();
             if (!e) return;
@@ -62,13 +61,14 @@ export class BlockRender {
                 charMetaDataList[i] = CharacterMetadata.applyStyle(charMetaDataList[i], style.style);
             }
         });
+        console.log(render_result.entityRanges);
         render_result.entityRanges.forEach(entity => {
             for (let i = entity.offset; i < entity.length + entity.offset; i++) {
                 charMetaDataList[i] = CharacterMetadata.applyEntity(charMetaDataList[i], block_key + '-' + entity.key);
             }
         });
         const newBlock = this.new_content[block_id].set("characterList", new List(charMetaDataList));
-        //console.log(newBlock)
+        console.log(JSON.stringify(newBlock));
 
         //end
         //add prefix to entity of each block
@@ -156,7 +156,7 @@ export function renderSelectionChange1(contentState, selection) {
             const data = entity.get('data');
             data.hidden = 1;
             contentState = contentState.replaceEntityData(key, data);
-        })
+        });
         return contentState;
     }
 
@@ -166,7 +166,9 @@ export function renderSelectionChange1(contentState, selection) {
         data.hidden = 1;
 
         if (data.blockKey !== startKey) return;
-
+        //const b = contentState.getBlockMap().get(startKey).set('data',Math.random());
+        //window.a=contentState;
+        //contentState=contentState.set('blockMap',contentState.getBlockMap().set(startKey,b));
         if ((start >= entity.data.activeRange[0] && start <= entity.data.activeRange[1])
             || (end >= entity.data.activeRange[0] && end <= entity.data.activeRange[1])
             || (start < entity.data.activeRange[0] && end > entity.data.activeRange[1])) {
@@ -174,7 +176,7 @@ export function renderSelectionChange1(contentState, selection) {
             console.log("show markup");
         }
         contentState = contentState.replaceEntityData(key, data);
-    })
+    });
     return contentState;
 
 }
