@@ -40,7 +40,7 @@
     "coveralls": "^3.0.4",
     "eslint": "^6.0.1",
     "express": "^4.14.0",
-    "highlight.js": "^9.2.0",
+    "highlight.js": "^10.4.1",
     "istanbul": "^0.4.5",
     "markdown-it-abbr": "^1.0.4",
     "markdown-it-container": "^2.0.0",
